@@ -1,13 +1,13 @@
 {
-  "name": "starter",
+  "name": "starter_template",
   "version": "1.0.0",
-  "description": "Sterter tepmate for web develope",
-  "main": "index.js",
+  "description": "Sterter tepmate for automate web-develope",
+  "main": "src/index.html",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "author": "xsid",
-  "license": "ISC",
+  "author": "DigitalChip.ru",
+  "license": "MIT",
   "devDependencies": {
     "connect-livereload": "^0.5.3",
     "convert-source-map": "^1.1.1",
