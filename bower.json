@@ -1,0 +1,23 @@
+{
+  "name": "a-plus",
+  "description": "",
+  "main": "index.js",
+  "authors": [
+    "xsid <xsidmail@gmail.com>"
+  ],
+  "license": "ISC",
+  "homepage": "",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "app/libs",
+    "test",
+    "tests"
+  ],
+  "dependencies": {
+    "bootstrap": "v4.0.0-beta",
+    "jquery": "^3.2.1",
+    "bourbon": "^4.3.4"
+  }
+}

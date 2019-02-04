@@ -1,0 +1,6 @@
+.vscode
+.idea
+_RESOURCES
+node_modules
+src/vendor
+build
