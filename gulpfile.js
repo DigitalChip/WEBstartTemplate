@@ -1,9 +1,9 @@
 global.hostname = "localhost",  // domain
 global.port = 80;               // port
 
-var src_dir_name = 'src',       // папка, где мы пишем наш проект
-    build_dir_name = 'build',   // в эту папку собирается окончательный вид проекта для продакшена
-    vendor_dir_name = 'vendor'; // папка, куда устанавливаются сторонние библиотеки
+var src_dir_name = 'src',               // папка, где мы пишем наш проект
+    build_dir_name = 'build',           // в эту папку собирается окончательный вид проекта для продакшена
+    vendor_dir_name = 'node_modules';   // папка, куда устанавливаются сторонние библиотеки
 
 
 var path = {
@@ -27,11 +27,11 @@ var path = {
         f_img:            src_dir_name + '/img/**/*.*',       //Синтаксис img/**/*.* означает - взять все файлы всех расширений из папки и из вложенных каталогов
         d_fonts:          src_dir_name + '/fonts/',
         f_fonts:          src_dir_name + '/fonts/**/*.*',
-        d_vendor:         src_dir_name + '/' + vendor_dir_name + '/',
+        d_vendor:         vendor_dir_name + '/',
         f_vendor:         [
-            src_dir_name + '/' + vendor_dir_name  + '/jquery/dist/jquery.min.js',           // Берем jQuery
-            src_dir_name + '/' + vendor_dir_name  + '/bootstrap/dist/js/bootstrap.min.js',  // Берем BootstrapJS
-            src_dir_name + '/' + vendor_dir_name  + '/popper.js/dist/umd/popper.min.js',    // Берем PopperJS
+            vendor_dir_name  + '/jquery/dist/jquery.min.js',           // Берем jQuery
+            vendor_dir_name  + '/bootstrap/dist/js/bootstrap.min.js',  // Берем BootstrapJS
+            vendor_dir_name  + '/popper.js/dist/umd/popper.min.js',    // Берем PopperJS
         ]
     },
     watch: { //Тут мы укажем, за изменением каких файлов мы хотим наблюдать
@@ -62,7 +62,20 @@ var gulp = require('gulp'),                     // Gulp собственной �
     plumber = require("gulp-plumber");          //предохранитель для остановки гальпа
 
 
-// Компилируем sass и сжимаем
+// *** live reload task
+//TODO: get new live reload
+
+// *** Чистим кеш картинок
+gulp.task('clear', function (callback) {
+    return cache.clearAll();
+})
+
+// *** Чистим каталог дистрибутива
+gulp.task('clean', function (cb) {
+    rimraf(path.clean, cb);
+});
+
+// *** Компилируем sass и сжимаем
 gulp.task('sass', function () {
     return gulp.src(path.src.f_sass)            // Берем источник
         .pipe(plumber())                        // Предохраняем от вылета Gulp
@@ -78,14 +91,14 @@ gulp.task('sass', function () {
 });
 
 // *** Собираем CSS библиотек в кучу и сжимаем
-gulp.task('css-process', ['sass'], function () {
+gulp.task('css-process', gulp.series('sass', function () {
     return gulp.src([                           // Выбираем файл для минификации
         path.src.d_css + '/libs.css',
         path.src.d_css + '/main.css'])
         .pipe(cssnano())                        // Сжимаем
         .pipe(rename({suffix: '.min'}))         // Добавляем суффикс .min
         .pipe(gulp.dest(path.src.d_css));       // Выгружаем в папку src/css
-});
+}));
 
 // *** Собираем скрипты в кучу и сжимаем
 gulp.task('scripts-process', function () {
@@ -108,23 +121,25 @@ gulp.task('img', function () {
         .pipe(gulp.dest('dist/img'));             // Выгружаем на продакшен
 });
 
+// *********************************************************************************************
 // *** Следилка за изменениями файлов
-gulp.task('watch', ['css-process','scripts-process'], function() {
+gulp.task('watch', gulp.series('css-process','scripts-process', function() {
     gulp.watch(path.watch.sass, ['sass']);          // При изменениях в Sass - компилируем
     gulp.watch(path.watch.css, notifyLiveReload);   // Если изменили css - уведомляем браузер
     gulp.watch(path.watch.html, notifyLiveReload);  // Если изменили html - уведомляем браузер
     gulp.watch(path.watch.js, notifyLiveReload);    // Если изменили js - уведомляем браузер
-});
+}));
 
+// *********************************************************************************************
 // *** ЗАДАЧА ПО УМОЛЧАНИЮ (следим за файлами в SRC и обновляем браузер
-gulp.task('default', ['express', 'livereload', 'watch']);
+gulp.task('default', gulp.series('express', 'livereload', 'watch'));
 
 
 
 
 // *********************************************************************************************
 // *** СОЗДАЕМ ПРОЕКТ В ПРОДАКШН
-gulp.task('build',['css-process', 'scripts-process', 'img'], function () {
+gulp.task('build', gulp.parallel('css-process', 'scripts-process', 'img', function () {
 
     var buildCss = gulp.src([                   // Переносим библиотеки в продакшен
         path.src.d_css + 'main.min.css',
@@ -149,46 +164,6 @@ gulp.task('build',['css-process', 'scripts-process', 'img'], function () {
 
     var buildHtml = gulp.src(path.src.f_html)   // Переносим HTML в продакшен
         .pipe(gulp.dest(path.build.html));
-});
+}));
 
-gulp.task('rebuild', ['clean','clear', 'build'], function () {
-
-});
-
-// *** Чистим кеш картинок
-gulp.task('clear', function (callback) {
-    return cache.clearAll();
-})
-
-// *** Чистим каталог дистрибутива
-gulp.task('clean', function (cb) {
-    rimraf(path.clean, cb);
-});
-
-
-
-
-// *** live reload
-
-gulp.task('express', function() {
-    var express = require('express');
-    var app = express();
-    app.use(require('connect-livereload')({port: 35729}));
-    app.use(express.static(__dirname + '/' + path.src.d_html));
-    app.listen(port, hostname);
-});
-
-var tinylr;
-gulp.task('livereload', function() {
-    tinylr = require('tiny-lr')();
-    tinylr.listen(35729);
-});
-
-function notifyLiveReload(event) {
-    var fileName = require('path').relative(__dirname, event.path);
-    tinylr.changed({
-        body: {
-            files: [fileName]
-        }
-    });
-}
+gulp.task('rebuild', gulp.series('clean','clear', 'build'));
