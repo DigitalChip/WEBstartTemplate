@@ -1,16 +1,22 @@
 "use strict";
 
-global.hostname = "localhost",  // domain
-    global.port = 80;               // port
+/* (C) 2019 DigitalChip.ru */
+/* ----------------------- */
 
-var src_dir_name = 'src',               // папка, где мы пишем наш проект
-    build_dir_name = 'build',           // в эту папку собирается окончательный вид проекта для продакшена
-    vendor_dir_name = 'node_modules';   // папка, куда устанавливаются сторонние библиотеки
+/**********************************************************/
+/****************  НАСТРОЙКИ ПРОЕКТА  *********************/
+/**********************************************************/
+global.hostname = "localhost",  // domain
+global.port = 8080;             // port
+
+var src_dir_name = 'src',                       // папка, где мы пишем наш проект
+    build_dir_name = 'build',                   // в эту папку собирается окончательный вид проекта для продакшена
+    vendor_dir_name = 'node_modules';           // папка, куда устанавливаются сторонние библиотеки
 
 
 var path = {
     build: { //Тут мы укажем куда складывать готовые после сборки файлы
-        html: build_dir_name,
+        html: build_dir_name + '/',
         js: build_dir_name + '/js/',
         css: build_dir_name + '/css/',
         img: build_dir_name + '/img/',
@@ -24,7 +30,7 @@ var path = {
         f_js: src_dir_name + '/js/[^_]*.js',        // все JS без подчеркивания
         f_sass: src_dir_name + '/sass/**/*.*',      // любые файлы в любых подкатегориях
         d_css: src_dir_name + '/css/',              // директория с css-файлами
-        f_css:  '/css/**/*.css',                    // css-файлы (включая рекурсивно поддиректории)
+        f_css: src_dir_name + '/css/**/*.css',      // css-файлы (включая рекурсивно поддиректории)
         // f_css: [
         //     src_dir_name + '/css/**/*.css',         // css-файлы (включая рекурсивно поддиректории)
         //     '!' + src_dir_name + '/css/**/*.min.css' // кроме минифицированных
@@ -58,9 +64,11 @@ var path = {
     outputDir: './' + build_dir_name    //исходная корневая директория для запуска минисервера
 };
 
-//gulp-uncss // Удаляет лишние стили
-// gulp-rigger — это просто киллер фича. Плагин позволяет импортировать один файл в другой простой конструкцией  //= footer.html
-// и эта строка при компиляции будет заменена на содержимое файла footer.html                
+/**********************************************************/
+/*****************  ЗАДАЧИ GULP  **************************/
+/**********************************************************/
+
+s//TODO: gulp-uncss // Удаляет лишние стили - проверить
 
 var gulp = require('gulp'),                     // Gulp собственной персоной
     sass = require('gulp-sass'),                // Подключаем Sass пакет,
@@ -79,30 +87,23 @@ var gulp = require('gulp'),                     // Gulp собственной �
     connect = require("gulp-connect"),          // сервер для livereload
     livereload = require('gulp-livereload');
 
+
 // *** LIVE RELOAD TASK
 // запускает live-reload сервер
 gulp.task('lrserver', function () {
-    console.log("lrserver");
     return connect.server({
-        root: build_dir_name,   // запускаем в папке собранного проекта - build
+        root: path.outputDir,   // запускаем в папке собранного проекта - build
+        host: global.host,
+        port: global.port,
+        name: 'Dev App',
         livereload: true
     });
 }); /* Теперь для обновления страницы, при изменении файлов нужно вызывать  .pipe(gulp.dest(path);  */
 
 
-// *** Чистим кеш картинок
-gulp.task('clear', function (callback) {
-    return cache.clearAll();
-})
-
-// *** Чистим каталог дистрибутива
-gulp.task('clean', function (cb) {
-    rimraf(path.clean, cb);
-});
-
 // *** Компилируем sass и сжимаем
 // Здесь компилируются как собственные стили, так и sass-файлы подключаемых библиотек (через файл _vendor_libs.sass)
-gulp.task('sass', function () {
+gulp.task('sass:compile', function () {
     return gulp.src(path.src.f_sass)            // Берем источник
         .pipe(plumber())                        // Предохраняем от вылета Gulp
         .pipe(sass().on('error', sass.logError))// Преобразуем Sass в CSS посредством gulp-sass (и боремся с вылетом при ошибках)
@@ -118,94 +119,96 @@ gulp.task('sass', function () {
 });
 
 // *** Собираем CSS библиотек, у которых нет SASS, и уже откомпилированные библиотеки в кучу, сжимаем и в продакшен
-gulp.task('css-process', gulp.series('sass', function () {
-    if (path.src.css_vendor.length != 0){ // Если есть CSS библиотеки, для которых отсутствуют SASS
+gulp.task('css:build', gulp.series('sass:compile', function () {
+    if (path.src.css_vendor.length != 0) { // Если есть CSS библиотеки, для которых отсутствуют SASS
         gulp.src(path.src.css_vendor)     // то копируем их в папку src/css для дальнейшей сборки и сжатия
-        .pipe(gulp.dest(path.src.d_css));
+            .pipe(gulp.dest(path.src.d_css));
     }
 
     return gulp.src(path.src.f_css)             // Выбираем файлы для минификации (все сгенерированные файлы css)
         .pipe(concat('styles.css'))
         .pipe(cssnano())                        // Сжимаем
         .pipe(rename({ suffix: '.min' }))       // Добавляем суффикс .min
-        .pipe(gulp.dest(path.build.html));       // Выгружаем в папку src/css
+        .pipe(gulp.dest(path.build.css))        // Выгружаем в папку src/css
+        .pipe(connect.reload());                // перезагружаем страницу
 }));
 
 // *** Собираем (куски) HTML файлы в единый файл
-gulp.task('html-process', function () {
-    return gulp.src(path.src.f_html)                   // Выберем файлы по нужному пути
-        .pipe(rigger())                         // Прогоним через rigger (подкдлючаем различные куски в html)
+gulp.task('html:build', function () {
+    return gulp.src(path.src.f_html)            // Выберем файлы по нужному пути
+        .pipe(plumber())                        // отслеживание ошибок
+        .pipe(rigger())                         // Прогоним через rigger (подкдлючаем различные куски в html, импорт вложений)
+        .on('error', handleError)
+        .pipe(plumber.stop())                   // Возвращаем стандартный обработчик
         .pipe(gulp.dest(path.build.html))       // Сохраняем
         .pipe(connect.reload());                // Перезагружаем страницу
 });
 
+function handleError(err) {
+    console.log(err.toString());
+    this.emit('end');
+}
+
 // *** Собираем скрипты в кучу и сжимаем
-gulp.task('scripts-process', function () {
+gulp.task('scripts:build', function () {
     return gulp.src(path.src.f_vendor)           // Берем JS файлы библиотек   
         .pipe(concat('bundle.min.js'))          // Собираем их в кучу в новом файле libs.min.js
+        .pipe(rigger())
         .pipe(uglify())                          // Сжимаем JS файл
-        .pipe(gulp.dest(path.src.d_js));         // Выгружаем в папку src/js
+        .pipe(gulp.dest(path.build.js))         // Выгружаем в папку src/js
+        .pipe(connect.reload());                // перезагружаем страницу
+});
+
+
+gulp.task('fonts:build', function() {
+    return gulp.src(path.src.f_fonts)
+        .pipe(gulp.dest(path.build.fonts))
 });
 
 // *** Сжатие картинок
-gulp.task('img', function () {
-    console.log("IMG");
-    return gulp.src('src/img/**/*')               // Берем все изображения из src/img
-        .pipe(cache(imagemin({                    // Сжимаем их с наилучшими настройками с учетом кеширования
-            interlaced: true,
-            progressive: true,
-            optimizationLevel: 5,
-            svgoPlugins: [{ removeViewBox: false }],
+gulp.task('images:build', function () {
+    return gulp.src(path.src.f_img)                     // Берем все изображения из src/img
+        .pipe(cache(imagemin({                          // Сжимаем их с наилучшими настройками с учетом кеширования
+            interlaced: true,                           // сжатие .gif
+            progressive: true,                          // сжатие .jpg
+            optimizationLevel: 5,                       // степень сжатия от 0 до 7
+            svgoPlugins: [{ removeViewBox: false }],    // сжатие .svg
             use: [pngquant()]
         })))
-        .pipe(gulp.dest('dist/img'));             // Выгружаем на продакшен
+        .pipe(gulp.dest(path.build.img));               // Выгружаем на продакшен
 });
 
+// *** Чистим кеш картинок
+gulp.task('clear', function (callback) {
+    return cache.clearAll();
+})
+
+// *** Чистим каталог дистрибутива
+gulp.task('clean:build', function (cb) {
+    rimraf(path.clean, cb);
+});
+
+
 // *********************************************************************************************
-// *** Следилка за изменениями файлов
-gulp.task('watch', gulp.series('sass', 'scripts-process', function () {
-    console.log("WATCH");
-    gulp.watch(path.watch.sass, gulp.series('sass'));          // При изменениях в Sass - компилируем
-    //gulp.watch(path.watch.css, notifyLiveReload);   // Если изменили css - уведомляем браузер
-    gulp.watch(path.watch.html, gulp.series('html-process'));  // Если изменили html - уведомляем браузер
-    gulp.watch(path.watch.js, gulp.series('scripts-process'));    // Если изменили js - уведомляем браузер
+// *** Следим за изменениями файлов и вызываем соответствующие задачи
+gulp.task('watch', gulp.series('html:build', 'css:build', 'scripts:build', 'images:build', 'fonts:build', function () {
+    gulp.watch(path.watch.html, gulp.series('html:build'));     // Если изменили html
+    gulp.watch(path.watch.sass, gulp.series('css:build'));      // При изменениях в Sass - компилируем
+    gulp.watch(path.watch.js, gulp.series('scripts:build'));    // Если изменили js
+    gulp.watch(path.watch.img, gulp.series('images:build'));    // Если изменили картинку
+    gulp.watch(path.watch.fonts, gulp.series('fonts:build'));   // Если изменили js
     return;
 }));
 
+
 // *********************************************************************************************
-// *** ЗАДАЧА ПО УМОЛЧАНИЮ (следим за файлами в SRC и обновляем браузер
+// *** ЗАДАЧА ПО УМОЛЧАНИЮ 
+// следим за файлами разработки в src и пересоздаем проект и обновляем браузер при изменениях
 gulp.task('default', gulp.parallel('watch', 'lrserver'));
 
-
-
-
 // *********************************************************************************************
-// *** СОЗДАЕМ ПРОЕКТ В ПРОДАКШН
-gulp.task('build', gulp.parallel('sass', 'scripts-process', 'img', function () {
+// *** СОЗДАЕМ ПРОЕКТ
+gulp.task('build', gulp.parallel('html:build', 'css:build', 'scripts:build','images:build', 'fonts:build'));
 
-    var buildCss = gulp.src([                   // Переносим библиотеки в продакшен
-        path.src.d_css + 'main.min.css',
-        path.src.d_css + 'libs.min.css'
-    ]).pipe(gulp.dest(path.build.css));
-
-    var buildFonts = gulp.src(path.src.f_fonts) // Переносим шрифты в продакшен
-        .pipe(gulp.dest(path.build.fonts));
-
-    var buildJs = gulp.src(path.src.d_js + 'bundle.min.js')       // Переносим минифицированные скрипты в продакшен
-        .pipe(gulp.dest(path.build.js));
-
-    var buildsImg = gulp.src(path.src.f_img)    // Переносим картинки в продакшен
-        .pipe(imagemin({ //Сожмем их
-            progressive: true, //сжатие .jpg
-            svgoPlugins: [{ removeViewBox: false }], //сжатие .svg
-            interlaced: true, //сжатие .gif
-            optimizationLevel: 3, //степень сжатия от 0 до 7
-            use: [pngquant()]
-        }))
-        .pipe(gulp.dest(path.build.img));      //выгрузим в build
-
-    var buildHtml = gulp.src(path.src.f_html)   // Переносим HTML в продакшен
-        .pipe(gulp.dest(path.build.html));
-}));
-
-gulp.task('rebuild', gulp.series('clean', 'clear', 'build'));
+// *** ПЕРЕСОЗДАЕМ ПРОЕКТ (с очисткой выходной папки)
+gulp.task('rebuild', gulp.series('clean:build', 'clear', 'build'));
