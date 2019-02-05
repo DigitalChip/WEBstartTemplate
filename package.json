@@ -1,7 +1,7 @@
 {
-  "name": "WebstarteTemplate",
+  "name": "WEBstartTemplate",
   "version": "2.0.1",
-  "description": "Sterter teplmate for automate web-develope",
+  "description": "Starter template for automate web-develope",
   "main": "src/index.html",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
