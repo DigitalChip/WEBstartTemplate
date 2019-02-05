@@ -1,11 +1,170 @@
-h1
-  font-family: Exo2Bold
+.main
   text-align: center
+  h1
+    font-size: 13em
+    color: #fff
+    margin: 0.4em 0 0
+    line-height: 1
+  h2
+    font-size: 1em
+    color: $color_white
+    text-transform: capitalize
 
-p
-  font-family: OpenSansRegular
+.more_content
+  margin: 3em 0 5em
+  a
+    padding: 8px 70px
+    font-size: 1em
+    background: $color_nav_bg
+    color: $color_dark_gray
+    text-transform: uppercase
+    transition: .5s ease-in
+    &:hover
+      background: #fff
+      color: #212121 
 
 
-.container
+.nav_top
+  padding: 3em 0 0
+  ul
+    margin: 0
+    padding: 0
+    list-style: none
+    li
+      display: inline-block
+      margin: 0 5px
+      a
+        font-size: 1em
+        color: $color_white
+        padding: 10px 20px
+        text-decoration: none
+      &.active
+        a
+          background: $color_white
+          color: $color_dark_gray
+          padding: 9px 20px 14px
+
+.hover_errect
+  display: inline-block
+  position: relative
+  box-shadow: 0 0 1px rgba(0, 0, 0, 0)
+  vertical-align: middle
+  backface-visibility: hidden
+  transform: translateZ(0)
+  transition-property: color
+  transition-duration: 0.3s
+  &:before
+    content: ""
+    position: absolute
+    z-index: -1
+    top: 0
+    left: 0
+    right: 0
+    bottom: 0
+    background: $color_nav_bg
+    transform: scaleY(0)
+    transform-origin: 50% 0
+    transition-property: transform
+    transition-duration: 0.1s
+    transition-timing-function: ease-out
+  &:hover, &:focus, &.active
+    color: white
+
+    &:before
+      transform: scaleY(1)
+
+.social_icons
+  position: relative
+  
   div
-    background-color: #cccccc
+    display: inline-block
+    position: absolute
+    top: 50%
+    left: 48.5%
+    transform: translate(-40%,-40%)
+  a
+    font-family: FontAwesome
+    font-size: 28px
+    color: $color_dark_gray
+    background: rgba(#fff,.6)
+    text-align: center
+    text-decoration: none
+    position: relative
+    display: inline-block
+    width: 40px
+    height: 40px
+    margin: 0 5px
+    transition: all .5s
+    &:nth-of-type(1):hover
+      background: $color_facebook
+    &:nth-of-type(2):hover
+      background: $color_twitter
+    &:nth-of-type(3):hover
+      background: $color_vkontakte
+    &:nth-of-type(4):hover
+      background: $color_odnoklassniki
+    &:nth-of-type(5):hover
+      background: $color_youtube
+    &:nth-of-type(6):hover
+      background: $color_telegram
+    
+    &:nth-of-type(1):before
+      content: '\f09a'
+    &:nth-of-type(2):before
+      content: '\f099'
+    &:nth-of-type(3):before
+      content: '\f189'
+    &:nth-of-type(4):before
+      content: '\f263'
+    &:nth-of-type(5):before
+      content: '\f16a'
+    &:nth-of-type(6):before
+      content: '\f2c6'
+
+    &:before
+      transition: .3s ease-in
+
+    &:hover
+      color: #ffffff
+      transition: 0.1s ease-in
+      span
+        bottom: 50px
+        visibility: visible
+        opacity: 1
+
+    span
+      color: $color_dark_gray
+      background: $color_white
+      position: absolute
+      bottom: 0
+      left: -50px
+      right: -50px
+      padding: 5px 10px
+      z-index: -1
+      font-size: 14px
+      visibility: hidden
+      opacity: 0
+      transition: all .3s cubic-bezier(0.78, -0.55, 0.265, 1.55)
+      &:before
+        content: ''
+        width: 0 
+        height: 0 
+        border-left: 5px solid transparent
+        border-right: 5px solid transparent
+        border-top: 5px solid $color_white
+        position: absolute
+        bottom: -4px
+        left: 64px
+    
+.copyright
+  font-family: OpenSansRegular
+  p
+    font-size: 1em
+    color: #fff
+    margin: 18em 0 0
+    line-height: 1.8em
+    text-align: center
+    a
+      color: $color_yellow
+      &:hover
+        text-decoration: underline

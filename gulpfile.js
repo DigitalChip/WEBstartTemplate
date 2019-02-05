@@ -167,6 +167,7 @@ gulp.task('scripts:build', function () {
 gulp.task('fonts:build', function() {
     return gulp.src(path.src.f_fonts)
         .pipe(gulp.dest(path.build.fonts))
+        .pipe(connect.reload());                // перезагружаем страницу
 });
 
 // *** Сжатие картинок
@@ -180,7 +181,8 @@ gulp.task('images:build', function () {
             svgoPlugins: [{ removeViewBox: false }],    // сжатие .svg
             use: [pngquant()]
         })))
-        .pipe(gulp.dest(path.build.img));               // Выгружаем на продакшен
+        .pipe(gulp.dest(path.build.img))               // Выгружаем на продакшен
+        .pipe(connect.reload());                // перезагружаем страницу
 });
 
 // *** Чистим кеш картинок

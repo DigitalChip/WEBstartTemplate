@@ -1,4 +1,4 @@
 $(function() {
     // Write your code here
-    alert (3);
+    //alert (3);
 });
